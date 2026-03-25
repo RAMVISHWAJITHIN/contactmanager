@@ -1,36 +1,314 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 📇 Contact Manager (Next.js App Router)
 
-## Getting Started
+A full-stack Contact Manager built using **Next.js (App Router)**, **Server Actions**, and **json-server**.
 
-First, run the development server:
+---
+
+## 🚀 Features
+
+* User Login (mock auth)
+* Create / Read / Update / Delete Contacts
+* Session-based access
+* Server Actions (Next.js)
+* Tailwind CSS UI
+* json-server as backend
+
+---
+
+## 🛠️ Tech Stack
+
+* Next.js (App Router)
+* React
+* Tailwind CSS
+* json-server
+* Axios
+
+---
+
+## 📂 Project Structure
+
+```
+app/
+ ├── _components/
+ ├── actions/
+ ├── api/
+ ├── _lib/
+ ├── _types/
+ ├── (auth)/
+ ├── contact/
+```
+
+---
+
+## ⚙️ Setup Instructions
+
+### 1. Install dependencies
+
+```bash
+npm install
+```
+
+---
+
+### 2. Start json-server
+
+```bash
+npm run server
+```
+
+Make sure your `db.json` looks like:
+
+```json
+{
+  "contacts": [
+    {
+      "id": "1",
+      "name": "John",
+      "email": "john@test.com",
+      "userId": "1"
+    }
+  ],
+  "users": [
+    {
+      "id": "1",
+      "name": "user1",
+      "email": "user1@gmail.com",
+      "password": "123456"
+    }
+  ]
+}
+```
+
+---
+
+### 3. Start Next.js app
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🔐 Authentication Logic
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Login
 
-## Learn More
+```ts
+const user = response.data.find(
+  (u) => u.email === email && u.password === password
+);
+```
 
-To learn more about Next.js, take a look at the following resources:
+> ⚠️ Using manual `.find()` instead of query filtering (more reliable with json-server)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 📌 Important Concepts
 
-## Deploy on Vercel
+### 1. Server Actions
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Always add:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```ts
+"use server";
+```
+
+---
+
+### 2. Form with Server Action
+
+```jsx
+<form action={formAction}>
+```
+
+❌ DO NOT use:
+
+```jsx
+<form method="post" action={formAction}>
+```
+
+---
+
+### 3. useActionState
+
+```ts
+const [state, formAction, pending] = useActionState(action, null);
+```
+
+---
+
+### 4. Redirect after success
+
+```ts
+useEffect(() => {
+  if (state?.success) {
+    router.push("/contact");
+    router.refresh();
+  }
+}, [state]);
+```
+
+---
+
+## 📇 Contact CRUD
+
+### Create Contact
+
+```ts
+const user = await getSession();
+
+const newContact = {
+  name: formData.get("name"),
+  email: formData.get("email"),
+  userId: String(user.id),
+};
+```
+
+---
+
+### Update Contact
+
+```ts
+const id = formData.get("id");
+
+await updateContact(id, updatedContact);
+```
+
+---
+
+### Delete Contact
+
+```ts
+const id = formData.get("id");
+
+await deleteContact(id);
+```
+
+---
+
+## ⚠️ Common Bugs & Fixes
+
+### ❌ 1. getSession not awaited
+
+```ts
+const user = getSession(); ❌
+```
+
+✅ Fix:
+
+```ts
+const user = await getSession();
+```
+
+---
+
+### ❌ 2. userId mismatch
+
+```ts
+"1" !== 1 ❌
+```
+
+✅ Fix:
+
+```ts
+userId: String(user.id)
+```
+
+---
+
+### ❌ 3. json-server filtering issue
+
+```ts
+/contacts?userId=1 → []
+```
+
+✅ Fix:
+
+```ts
+const response = await axios.get("/contacts");
+
+return response.data.filter(
+  (c) => String(c.userId) === String(userId)
+);
+```
+
+---
+
+### ❌ 4. Form error (method issue)
+
+```jsx
+<form method="post" action={formAction}> ❌
+```
+
+✅ Fix:
+
+```jsx
+<form action={formAction}>
+```
+
+---
+
+### ❌ 5. Duplicate hidden inputs
+
+```jsx
+<input name="id" />
+<input name="id" /> ❌
+```
+
+✅ Fix: Keep only one
+
+---
+
+## 🎨 UI Features
+
+* Tailwind modern UI
+* Gradient backgrounds
+* Card layouts
+* Hover effects
+* Loading states
+
+---
+
+## 🔄 Revalidation
+
+```ts
+revalidatePath("/contact");
+```
+
+Ensures UI updates after create/update/delete.
+
+---
+
+## 🧠 Key Learnings
+
+* Server Actions simplify backend logic
+* Always await async functions
+* Type mismatches cause silent bugs
+* json-server filtering can be unreliable
+* Use `useActionState` for form handling
+
+---
+
+## 🔥 Future Improvements
+
+* Add Toast Notifications
+* Add Search & Filter
+* Add Authentication (JWT)
+* Add Protected Routes (Middleware)
+* Add Animations (Framer Motion)
+
+---
+
+## ✅ Final Notes
+
+* Keep types strict (avoid optional fields unless needed)
+* Always validate form inputs
+* Keep UI consistent
+
+---
+
+## 👨‍💻 Author
+
+Ramvishwajithin
+
+---
